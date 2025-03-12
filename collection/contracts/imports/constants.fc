@@ -1,0 +1,17 @@
+const int workchain                    = 0;
+const int min_tons_for_mint            = 200000000;
+const int min_tons_for_storage         = 50000000;
+
+const int dns_next_resolver::prefix    = 0xba93;
+const int dns_next_resolver::key       = "dns_next_resolver"H;
+
+const int key::uri                     = "uri"H;
+const int key::name                    = "name"H;
+const int key::image                   = "image"H;
+const int key::prefix_uri              = "prefix_uri"H;
+
+const slice const::dot                 = ".";
+const slice const::ton                 = "ton";
+const slice const::png                 = "png";
+const slice const::json                = "json";
+const slice const::slash               = "/";

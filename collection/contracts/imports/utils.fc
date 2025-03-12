@@ -1,0 +1,139 @@
+#include "constants.fc";
+#include "err-codes.fc";
+#include "op-codes.fc";
+#include "stdlib.fc";
+
+int mod(int x, int y)                  asm "MOD";
+int tlen(tuple t)                      asm "TLEN";
+forall X -> (tuple) to_tuple(X x)      asm "NOP";
+
+() force_chain(slice addr) impure {
+    (int wc, _) = parse_std_addr(addr);
+    throw_unless(err::incorrect_workchain, wc == workchain);
+}
+
+slice int_to_slice(int num) {
+    builder string = begin_cell();
+    tuple chars = null();
+    do {
+        int r = num~divmod(10);
+        chars = cons(r + 48, chars);
+    } until (num == 0);
+    do {
+        int char = chars~list_next();
+        string~store_uint(char, 8);
+    } until (null?(chars));
+
+    return string.end_cell().begin_parse();
+}
+
+cell store_onchain_data(slice data) {
+    return begin_cell()
+        .store_uint(0, 8)
+        .store_slice(data)
+        .end_cell();
+}
+
+slice load_onchain_data(cell data) {
+    slice cs = data.begin_parse();
+    cs~skip_bits(8);
+    return cs;
+}
+
+slice build_snake_slice(tuple slices) {
+    int len = slices.tlen();
+    cell result = begin_cell().store_slice(slices.at(len - 1)).end_cell();
+    int i = len - 2;
+    while (i >= 0) {
+        result = begin_cell()
+            .store_slice(slices.at(i))
+            .store_ref(result)
+            .end_cell();
+        i = i - 1;
+    }
+    return result.begin_parse();
+}
+
+(cell, cell, cell) create_nft_metadata(cell content, slice domain, slice subdomain) {
+    slice content_slice = load_onchain_data(content);
+    cell content_dict = content_slice~load_dict();
+
+    (cell prefix_uri_cell, _) = content_dict.udict_get_ref?(256, key::prefix_uri);
+    slice prefix_uri = load_onchain_data(prefix_uri_cell);
+    (_, int my_addr_hash) = parse_std_addr(my_address());
+    slice my_addr_hash_slice = int_to_slice(my_addr_hash);
+
+    cell name = store_onchain_data(build_snake_slice(to_tuple([subdomain, const::dot, domain, const::dot, const::ton])));
+    cell image = store_onchain_data(build_snake_slice(to_tuple([prefix_uri, subdomain, const::slash, domain, const::dot, const::png])));
+    cell uri = store_onchain_data(build_snake_slice(to_tuple([prefix_uri, my_addr_hash_slice, const::slash, subdomain, const::slash, domain, const::dot, const::json])));
+    return (name, image, uri);
+}
+
+cell calculate_nft_item_state_init(int item_index, cell item_code) {
+    cell data = begin_cell().store_uint(item_index, 256).store_slice(my_address()).end_cell();
+    return begin_cell()
+        .store_uint(0, 2)
+        .store_dict(item_code)
+        .store_dict(data)
+        .store_uint(0, 1)
+        .end_cell();
+}
+
+slice calculate_nft_item_address(int wc, cell state_init) {
+    int hash = cell_hash(state_init);
+    return begin_cell()
+        .store_uint(4, 3)
+        .store_int(wc, 8)
+        .store_uint(hash, 256)
+        .end_cell()
+        .begin_parse();
+}
+
+int get_top_domain_bits(slice domain) {
+    int i = 0;
+    int need_break = 0;
+    do {
+        int char = domain~load_uint(8);
+        need_break = char == 0;
+        if (~ need_break) {
+            i += 8;
+        }
+    } until (need_break);
+    throw_if(err::domain_invalid_format, i == 0);
+    return i;
+}
+
+slice read_domain_from_comment(slice comment) {
+    int need_break = 0;
+    builder result = begin_cell();
+    do {
+        result = result.store_slice(comment~load_bits(comment.slice_bits()));
+        int refs_len = comment.slice_refs();
+        need_break = refs_len == 0;
+        if (~ need_break) {
+            throw_unless(err::domain_invalid_format, refs_len == 1);
+            comment = comment~load_ref().begin_parse();
+        }
+    } until (need_break);
+    return result.end_cell().begin_parse();
+}
+
+int check_domain_string(slice domain) {
+    int i = 0;
+    int len = slice_bits(domain);
+    int need_break = 0;
+    do {
+        need_break = i == len;
+        if (~ need_break) {
+            int char = domain~load_uint(8);
+            int is_hyphen = (char == 45);
+            int valid_char = (is_hyphen & (i > 0) & (i < len - 8)) | ((char >= 48) & (char <= 57)) | ((char >= 97) & (char <= 122));
+
+            need_break = ~ valid_char;
+            if (~ need_break) {
+                i += 8;
+            }
+        }
+    } until (need_break);
+    return i == len;
+}

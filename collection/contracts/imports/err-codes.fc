@@ -1,0 +1,15 @@
+const int err::bad_subdomain_length    = 70;
+
+const int err::domain_too_short        = 200;
+const int err::domain_too_long         = 201;
+const int err::domain_not_aligned      = 202;
+const int err::domain_invalid_format   = 203;
+const int err::domain_price_too_low    = 204;
+
+const int err::incorrect_workchain     = 333;
+
+const int err::access_denied           = 401;
+const int err::invalid_onchain_tag     = 412;
+const int err::no_first_zero_byte      = 413;
+
+const int err::unknown_op_code         = 65535;

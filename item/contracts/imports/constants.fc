@@ -1,0 +1,5 @@
+const int workchain                    = 0;
+const int min_tons_for_storage         = 50000000;
+
+const int dns_next_resolver::key       = "dns_next_resolver"H;
+const slice const::ton                 = "ton";

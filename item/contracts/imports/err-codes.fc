@@ -1,0 +1,9 @@
+const int err::bad_subdomain_length    = 70;
+const int err::incorrect_workchain     = 333;
+
+const int err::access_denied           = 401;
+const int err::low_balance             = 402;
+const int err::invalid_onchain_tag     = 412;
+const int err::no_first_zero_byte      = 413;
+
+const int err::unknown_op_code         = 65535;

@@ -1,0 +1,11 @@
+#include "constants.fc";
+#include "err-codes.fc";
+#include "op-codes.fc";
+#include "stdlib.fc";
+
+int mod(int x, int y)                  asm "MOD";
+
+() force_chain(slice addr) impure {
+    (int wc, _) = parse_std_addr(addr);
+    throw_unless(err::incorrect_workchain, wc == workchain);
+}
