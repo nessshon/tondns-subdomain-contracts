@@ -22,10 +22,10 @@
     );
 }
 
-() save_data(slice owner_addr, cell storage, cell item_code, cell royalty_params, cell domain) impure inline {
+() save_data(slice owner_addr, cell content, cell item_code, cell royalty_params, cell domain) impure inline {
     set_data(begin_cell()
         .store_slice(owner_addr)
-        .store_ref(storage)
+        .store_ref(content)
         .store_ref(item_code)
         .store_ref(royalty_params)
         .store_ref(domain)
